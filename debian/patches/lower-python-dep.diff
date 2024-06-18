@@ -1,0 +1,15 @@
+Index: llvm-toolchain-snapshot_17~++20230523093327+96a003b9bf79/llvm/CMakeLists.txt
+===================================================================
+--- llvm-toolchain-snapshot_17~++20230523093327+96a003b9bf79.orig/llvm/CMakeLists.txt
++++ llvm-toolchain-snapshot_17~++20230523093327+96a003b9bf79/llvm/CMakeLists.txt
+@@ -843,8 +843,8 @@ set(LLVM_PROFDATA_FILE "" CACHE FILEPATH
+   "Profiling data file to use when compiling in order to improve runtime performance.")
+ 
+ if(LLVM_INCLUDE_TESTS)
+-  # Lit test suite requires at least python 3.6
+-  set(LLVM_MINIMUM_PYTHON_VERSION 3.6)
++  # Lit test suite requires at least python 3.5
++  set(LLVM_MINIMUM_PYTHON_VERSION 3.5)
+ else()
+   # FIXME: it is unknown if this is the actual minimum bound
+   set(LLVM_MINIMUM_PYTHON_VERSION 3.0)

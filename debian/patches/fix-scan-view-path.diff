@@ -1,0 +1,21 @@
+Index: llvm-toolchain-snapshot_17~++20200326172000+4673699a470/clang/tools/scan-view/bin/scan-view
+===================================================================
+--- llvm-toolchain-snapshot_17~++20200326172000+4673699a470.orig/clang/tools/scan-view/bin/scan-view
++++ llvm-toolchain-snapshot_17~++20200326172000+4673699a470/clang/tools/scan-view/bin/scan-view
+@@ -28,6 +28,7 @@ kDefaultPort = 8181
+ kMaxPortsToTry = 100
+ 
+ ###
++BASE_DIR = '/usr/share/clang/scan-view-18'
+ 
+ 
+ def url_is_up(url):
+@@ -65,7 +66,7 @@ def start_browser(port, options):
+ 
+ def run(port, options, root):
+     # Prefer to look relative to the installed binary
+-    share = os.path.dirname(__file__) + "/../share/"
++    share = os.path.join(BASE_DIR, 'share')
+     if not os.path.isdir(share):
+         # Otherwise look relative to the source
+         share = os.path.dirname(__file__) + "/../../scan-view/share"

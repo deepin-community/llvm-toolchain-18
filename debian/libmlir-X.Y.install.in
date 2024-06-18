@@ -1,0 +1,2 @@
+usr/lib/llvm-@LLVM_VERSION@/lib/libMLIR.so.*
+usr/lib/llvm-@LLVM_VERSION@/lib/libmlir*.so.*

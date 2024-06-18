@@ -1,0 +1,5 @@
+#!/usr/bin/dh-exec
+
+usr/lib/llvm-@LLVM_VERSION@/lib/libLTO.so.@LLVM_VERSION@.1
+[!powerpc !powerpcspe] usr/lib/llvm-@LLVM_VERSION@/lib/LLVMPolly.so
+[!powerpc !powerpcspe !riscv64 !mips64el !armel !loong64] usr/lib/llvm-@LLVM_VERSION@/lib/LLVMgold.so

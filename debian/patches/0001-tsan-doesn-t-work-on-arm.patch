@@ -1,0 +1,24 @@
+From 8984b5d9a9bb143844e716db79388808f6944270 Mon Sep 17 00:00:00 2001
+From: Sylvestre Ledru <sylvestre@debian.org>
+Date: Sun, 18 Oct 2020 18:56:17 +0200
+Subject: [PATCH 1/3] tsan doesn't work on arm
+
+---
+ tests/test_tsan.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/integration-test-suite/tests/test_tsan.c b/tests/test_tsan.c
+index ed9aaec..197d3a4 100644
+--- a/integration-test-suite/tests/test_tsan.c
++++ b/integration-test-suite/tests/test_tsan.c
+@@ -5,6 +5,7 @@
+ // RUN: %llvm-nm %t | grep __tsan
+ // RUN: env TSAN_OPTIONS="log_path=stdout:exitcode=0"  %t 2>&1 > %t.out
+ // RUN: grep -q "data race" %t.out
++// XFAIL: arm 
+ 
+ #include <pthread.h>
+ #include <stdio.h>
+-- 
+2.28.0
+

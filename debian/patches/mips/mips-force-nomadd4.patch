@@ -1,0 +1,21 @@
+The MIPS port aims to support the Loongson 3 family of CPUs in addition
+of the other MIPS CPUs. On the Loongson 3 family the MADD4 instructions
+are fused, while they are not fused on the other MIPS CPUs. In order to
+support both, we have to disabled those instructions.
+
+For that, the patch below basically corresponds to the --with-madd4=no
+used on the GCC side.
+
+Index: llvm-toolchain-snapshot_17~++20230517015648+0b6264738f3d/clang/lib/Basic/Targets/Mips.h
+===================================================================
+--- llvm-toolchain-snapshot_17~++20230517015648+0b6264738f3d.orig/clang/lib/Basic/Targets/Mips.h
++++ llvm-toolchain-snapshot_17~++20230517015648+0b6264738f3d/clang/lib/Basic/Targets/Mips.h
+@@ -331,6 +331,8 @@ public:
+         HasMSA = true;
+       else if (Feature == "+nomadd4")
+         DisableMadd4 = true;
++      else if (Feature == "-nomadd4")
++        DisableMadd4 = false;
+       else if (Feature == "+fp64")
+         FPMode = FP64;
+       else if (Feature == "-fp64")

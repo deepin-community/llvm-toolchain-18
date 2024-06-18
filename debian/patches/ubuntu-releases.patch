@@ -1,0 +1,44 @@
+From 90bd7234e36e5b3d63155f481b739ea463985631 Mon Sep 17 00:00:00 2001
+From: Sylvestre Ledru <sylvestre@debian.org>
+Date: Thu, 2 May 2024 22:54:08 +0200
+Subject: [PATCH] Add support of the next Ubuntu (Ubuntu 24.10 - Oracular
+ Oriol)
+
+---
+ clang/include/clang/Driver/Distro.h | 3 ++-
+ clang/lib/Driver/Distro.cpp         | 1 +
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/clang/include/clang/Driver/Distro.h b/clang/include/clang/Driver/Distro.h
+index a8de94163e8b0b..1404e168684821 100644
+--- a/clang/include/clang/Driver/Distro.h
++++ b/clang/include/clang/Driver/Distro.h
+@@ -79,6 +79,7 @@ class Distro {
+     UbuntuLunar,
+     UbuntuMantic,
+     UbuntuNoble,
++    UbuntuOracular,
+     UnknownDistro
+   };
+ 
+@@ -130,7 +131,7 @@ class Distro {
+   }
+ 
+   bool IsUbuntu() const {
+-    return DistroVal >= UbuntuHardy && DistroVal <= UbuntuNoble;
++    return DistroVal >= UbuntuHardy && DistroVal <= UbuntuOracular;
+   }
+ 
+   bool IsAlpineLinux() const { return DistroVal == AlpineLinux; }
+diff --git a/clang/lib/Driver/Distro.cpp b/clang/lib/Driver/Distro.cpp
+index a7e7f169dc1419..6f49e641104ccd 100644
+--- a/clang/lib/Driver/Distro.cpp
++++ b/clang/lib/Driver/Distro.cpp
+@@ -95,6 +95,7 @@ static Distro::DistroType DetectLsbRelease(llvm::vfs::FileSystem &VFS) {
+                     .Case("lunar", Distro::UbuntuLunar)
+                     .Case("mantic", Distro::UbuntuMantic)
+                     .Case("noble", Distro::UbuntuNoble)
++                    .Case("oracular", Distro::UbuntuOracular)
+                     .Default(Distro::UnknownDistro);
+   return Version;
+ }

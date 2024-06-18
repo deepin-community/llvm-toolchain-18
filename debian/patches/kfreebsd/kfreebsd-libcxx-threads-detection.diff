@@ -1,0 +1,12 @@
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/libcxx/include/__config
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/libcxx/include/__config
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/libcxx/include/__config
+@@ -1085,6 +1085,7 @@ _LIBCPP_FUNC_VIS extern "C" void __sanit
+     !defined(_LIBCPP_HAS_THREAD_API_WIN32) && \
+     !defined(_LIBCPP_HAS_THREAD_API_EXTERNAL)
+ #  if defined(__FreeBSD__) || \
++      defined(__FreeBSD_kernel__) || \
+       defined(__Fuchsia__) || \
+       defined(__wasi__) || \
+       defined(__NetBSD__) || \

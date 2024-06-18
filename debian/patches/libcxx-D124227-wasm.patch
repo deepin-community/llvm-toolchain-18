@@ -1,0 +1,35 @@
+From 67b0b02ec9f2bbc57bf8f0550828d97f460ac11f Mon Sep 17 00:00:00 2001
+From: Brad Smith <brad@comstyle.com>
+Date: Sat, 7 May 2022 01:06:32 -0400
+Subject: [PATCH] [libcxx] Remove static inline and make use of
+ _LIBCPP_HIDE_FROM_ABI in __support headers
+
+After feedback from D122861, do the same thing with some of the other headers. Try to move the
+headers so they have a similar style and way of doing things.
+
++ also applies:
+https://reviews.llvm.org/D141208
+
+Reviewed By: ldionne, daltenty
+
+Differential Revision: https://reviews.llvm.org/D124227
+---
+ libcxx/include/__support/ibm/gettod_zos.h  |  3 +-
+ libcxx/include/__support/ibm/xlocale.h     | 53 +++++++++------------
+ libcxx/include/__support/musl/xlocale.h    | 31 ++++++------
+ libcxx/include/__support/solaris/xlocale.h | 55 +++++++++++-----------
+ 4 files changed, 67 insertions(+), 75 deletions(-)
+
+Index: llvm-toolchain-15_15.0.6~++20230102020141+088f33605d8a/libcxx/include/__support/musl/xlocale.h
+===================================================================
+--- llvm-toolchain-15_15.0.6~++20230102020141+088f33605d8a.orig/libcxx/include/__support/musl/xlocale.h
++++ llvm-toolchain-15_15.0.6~++20230102020141+088f33605d8a/libcxx/include/__support/musl/xlocale.h
+@@ -39,7 +39,7 @@ wcstoll_l(const wchar_t *__nptr, wchar_t
+   return ::wcstoll(__nptr, __endptr, __base);
+ }
+ 
+-inline _LIBCPP_HIDE_FROM_ABI long long
++inline _LIBCPP_HIDE_FROM_ABI unsigned long long
+ wcstoull_l(const wchar_t *__nptr, wchar_t **__endptr, int __base, locale_t) {
+   return ::wcstoull(__nptr, __endptr, __base);
+ }

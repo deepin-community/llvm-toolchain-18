@@ -1,0 +1,374 @@
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/sanitizer_common/sanitizer_linux.cpp
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/compiler-rt/lib/sanitizer_common/sanitizer_linux.cpp
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/sanitizer_common/sanitizer_linux.cpp
+@@ -83,9 +83,14 @@
+ extern "C" {
+ // <sys/umtx.h> must be included after <errno.h> and <sys/types.h> on
+ // FreeBSD 9.2 and 10.0.
++#if SANITIZER_KFREEBSD
++#include <bsd/sys/cdefs.h>
++#endif
+ #include <sys/umtx.h>
+ }
++#if !SANITIZER_KFREEBSD
+ #include <sys/thr.h>
++#endif
+ #endif  // SANITIZER_FREEBSD
+ 
+ #if SANITIZER_NETBSD
+@@ -461,10 +466,12 @@ bool FileExists(const char *filename) {
+ 
+ #if !SANITIZER_NETBSD
+ tid_t GetTid() {
+-#if SANITIZER_FREEBSD
++#if SANITIZER_FREEBSD && !SANITIZER_KFREEBSD
+   long Tid;
+   thr_self(&Tid);
+   return Tid;
++#elif SANITIZER_KFREEBSD
++  return (uptr)pthread_self();
+ #elif SANITIZER_OPENBSD
+   return internal_syscall(SYSCALL(getthrid));
+ #elif SANITIZER_SOLARIS
+@@ -1148,10 +1155,10 @@ bool LibraryNameIs(const char *full_name
+ // Call cb for each region mapped by map.
+ void ForEachMappedRegion(link_map *map, void (*cb)(const void *, uptr)) {
+   CHECK_NE(map, nullptr);
+-#if !SANITIZER_FREEBSD && !SANITIZER_OPENBSD
++#if !SANITIZER_FREEBSD && !SANITIZER_OPENBSD || SANITIZER_KFREEBSD
+   typedef ElfW(Phdr) Elf_Phdr;
+   typedef ElfW(Ehdr) Elf_Ehdr;
+-#endif // !SANITIZER_FREEBSD && !SANITIZER_OPENBSD
++#endif // !SANITIZER_FREEBSD && !SANITIZER_OPENBSD || SANITIZER_KFREEBSD
+   char *base = (char *)map->l_addr;
+   Elf_Ehdr *ehdr = (Elf_Ehdr *)base;
+   char *phdrs = base + ehdr->e_phoff;
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/sanitizer_common/sanitizer_linux_libcdep.cpp
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/compiler-rt/lib/sanitizer_common/sanitizer_linux_libcdep.cpp
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/sanitizer_common/sanitizer_linux_libcdep.cpp
+@@ -36,10 +36,12 @@
+ #include <syslog.h>
+ 
+ #if SANITIZER_FREEBSD
+-#include <pthread_np.h>
++# if !SANITIZER_KFREEBSD
++# include <pthread_np.h>
++# define pthread_getattr_np pthread_attr_get_np
++# endif
+ #include <osreldate.h>
+ #include <sys/sysctl.h>
+-#define pthread_getattr_np pthread_attr_get_np
+ #endif
+ 
+ #if SANITIZER_OPENBSD
+@@ -525,9 +527,9 @@ void GetThreadStackAndTls(bool main, upt
+ #endif
+ }
+ 
+-#if !SANITIZER_FREEBSD && !SANITIZER_OPENBSD
++#if !SANITIZER_FREEBSD && !SANITIZER_OPENBSD || SANITIZER_KFREEBSD
+ typedef ElfW(Phdr) Elf_Phdr;
+-#elif SANITIZER_WORDSIZE == 32 && __FreeBSD_version <= 902001 // v9.2
++#elif SANITIZER_WORDSIZE == 32 && !SANITIZER_KFREEBSD && __FreeBSD_version <= 902001 // v9.2
+ #define Elf_Phdr XElf32_Phdr
+ #define dl_phdr_info xdl_phdr_info
+ #define dl_iterate_phdr(c, b) xdl_iterate_phdr((c), (b))
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/sanitizer_common/sanitizer_platform.h
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/compiler-rt/lib/sanitizer_common/sanitizer_platform.h
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/sanitizer_common/sanitizer_platform.h
+@@ -15,7 +15,7 @@
+ #if !defined(__linux__) && !defined(__FreeBSD__) && !defined(__NetBSD__) && \
+   !defined(__OpenBSD__) && !defined(__APPLE__) && !defined(_WIN32) && \
+   !defined(__Fuchsia__) && !defined(__rtems__) && \
+-  !(defined(__sun__) && defined(__svr4__))
++  !(defined(__sun__) && defined(__svr4__)) && !defined(__FreeBSD_kernel__)
+ # error "This operating system is not supported"
+ #endif
+ 
+@@ -25,12 +25,18 @@
+ # define SANITIZER_LINUX   0
+ #endif
+ 
+-#if defined(__FreeBSD__)
++#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
+ # define SANITIZER_FREEBSD 1
+ #else
+ # define SANITIZER_FREEBSD 0
+ #endif
+ 
++#if defined(__FreeBSD_kernel__)
++# define SANITIZER_KFREEBSD 1
++#else
++# define SANITIZER_KFREEBSD 0
++#endif
++
+ #if defined(__NetBSD__)
+ # define SANITIZER_NETBSD 1
+ #else
+@@ -112,7 +118,8 @@
+ 
+ #define SANITIZER_POSIX \
+   (SANITIZER_FREEBSD || SANITIZER_LINUX || SANITIZER_MAC || \
+-    SANITIZER_NETBSD || SANITIZER_OPENBSD || SANITIZER_SOLARIS)
++    SANITIZER_NETBSD || SANITIZER_OPENBSD || SANITIZER_SOLARIS || \
++    SANITIZER_KFREEBSD)
+ 
+ #if __LP64__ || defined(_WIN64)
+ #  define SANITIZER_WORDSIZE 64
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/asan/asan_linux.cpp
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/compiler-rt/lib/asan/asan_linux.cpp
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/asan/asan_linux.cpp
+@@ -37,7 +37,7 @@
+ #include <unistd.h>
+ #include <unwind.h>
+ 
+-#if SANITIZER_FREEBSD
++#if SANITIZER_FREEBSD && !SANITIZER_KFREEBSD
+ #include <sys/link_elf.h>
+ #endif
+ 
+@@ -47,7 +47,11 @@
+ 
+ #if SANITIZER_ANDROID || SANITIZER_FREEBSD || SANITIZER_SOLARIS
+ #include <ucontext.h>
++#if SANITIZER_KFREEBSD
++#include <link.h>
++#else
+ extern "C" void* _DYNAMIC;
++#endif
+ #elif SANITIZER_NETBSD
+ #include <link_elf.h>
+ #include <ucontext.h>
+@@ -60,7 +64,7 @@ extern Elf_Dyn _DYNAMIC;
+ // x86-64 FreeBSD 9.2 and older define 'ucontext_t' incorrectly in
+ // 32-bit mode.
+ #if SANITIZER_FREEBSD && (SANITIZER_WORDSIZE == 32) && \
+-  __FreeBSD_version <= 902001  // v9.2
++  !SANITIZER_KFREEBSD && __FreeBSD_version <= 902001  // v9.2
+ #define ucontext_t xucontext_t
+ #endif
+ 
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/ubsan/ubsan_platform.h
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/compiler-rt/lib/ubsan/ubsan_platform.h
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/ubsan/ubsan_platform.h
+@@ -14,7 +14,7 @@
+ 
+ // Other platforms should be easy to add, and probably work as-is.
+ #if defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__) ||        \
+-    defined(__NetBSD__) || defined(__OpenBSD__) || \
++    defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD_kernel__) || \
+     (defined(__sun__) && defined(__svr4__)) || \
+     defined(_WIN32) || defined(__Fuchsia__) || defined(__rtems__)
+ # define CAN_SANITIZE_UB 1
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/tsan/rtl/tsan_rtl_amd64.S
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/compiler-rt/lib/tsan/rtl/tsan_rtl_amd64.S
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/tsan/rtl/tsan_rtl_amd64.S
+@@ -192,7 +192,7 @@ ASM_SYMBOL_INTERCEPTOR(setjmp):
+   // obtain SP, store in %rdi, first argument to `void __tsan_setjmp(uptr sp)`
+ #if defined(__FreeBSD__) || defined(__NetBSD__)
+   lea 8(%rsp), %rdi
+-#elif defined(__linux__) || defined(__APPLE__)
++#elif defined(__linux__) || defined(__FreeBSD_kernel__) || defined(__APPLE__)
+   lea 16(%rsp), %rdi
+ #else
+ # error "Unknown platform"
+@@ -233,7 +233,7 @@ ASM_SYMBOL_INTERCEPTOR(_setjmp):
+   // obtain SP, store in %rdi, first argument to `void __tsan_setjmp(uptr sp)`
+ #if defined(__FreeBSD__) || defined(__NetBSD__)
+   lea 8(%rsp), %rdi
+-#elif defined(__linux__) || defined(__APPLE__)
++#elif defined(__linux__) || defined(__FreeBSD_kernel__) || defined(__APPLE__)
+   lea 16(%rsp), %rdi
+ #else
+ # error "Unknown platform"
+@@ -281,7 +281,7 @@ ASM_SYMBOL_INTERCEPTOR(sigsetjmp):
+   // obtain SP, store in %rdi, first argument to `void __tsan_setjmp(uptr sp)`
+ #if defined(__FreeBSD__) || defined(__NetBSD__)
+   lea 24(%rsp), %rdi
+-#elif defined(__linux__) || defined(__APPLE__)
++#elif defined(__linux__) || defined(__FreeBSD_kernel__) || defined(__APPLE__)
+   lea 32(%rsp), %rdi
+ #else
+ # error "Unknown platform"
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/fuzzer/FuzzerDefs.h
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/compiler-rt/lib/fuzzer/FuzzerDefs.h
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/fuzzer/FuzzerDefs.h
+@@ -28,6 +28,7 @@
+ #define LIBFUZZER_LINUX 1
+ #define LIBFUZZER_NETBSD 0
+ #define LIBFUZZER_FREEBSD 0
++#define LIBFUZZER_KFREEBSD 1
+ #define LIBFUZZER_OPENBSD 0
+ #define LIBFUZZER_WINDOWS 0
+ #elif __APPLE__
+@@ -54,6 +55,15 @@
+ #define LIBFUZZER_FREEBSD 1
+ #define LIBFUZZER_OPENBSD 0
+ #define LIBFUZZER_WINDOWS 0
++#elif __FreeBSD_kernel__
++#define LIBFUZZER_APPLE 0
++#define LIBFUZZER_FUCHSIA 0
++#define LIBFUZZER_LINUX 0
++#define LIBFUZZER_NETBSD 0
++#define LIBFUZZER_FREEBSD 0
++#define LIBFUZZER_KFREEBSD 1
++#define LIBFUZZER_OPENBSD 0
++#define LIBFUZZER_WINDOWS 0
+ #elif __OpenBSD__
+ #define LIBFUZZER_APPLE 0
+ #define LIBFUZZER_FUCHSIA 0
+@@ -95,7 +105,7 @@
+ 
+ #define LIBFUZZER_POSIX                                                        \
+   (LIBFUZZER_APPLE || LIBFUZZER_LINUX || LIBFUZZER_NETBSD ||                   \
+-   LIBFUZZER_FREEBSD || LIBFUZZER_OPENBSD)
++   LIBFUZZER_FREEBSD || LIBFUZZER_OPENBSD || LIBFUZZER_KFREEBSD)
+ 
+ #ifdef __x86_64
+ #  if __has_attribute(target)
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/fuzzer/FuzzerUtilPosix.cpp
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/compiler-rt/lib/fuzzer/FuzzerUtilPosix.cpp
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/fuzzer/FuzzerUtilPosix.cpp
+@@ -133,7 +133,7 @@ size_t GetPeakRSSMb() {
+   if (getrusage(RUSAGE_SELF, &usage))
+     return 0;
+   if (LIBFUZZER_LINUX || LIBFUZZER_FREEBSD || LIBFUZZER_NETBSD ||
+-      LIBFUZZER_OPENBSD) {
++      LIBFUZZER_OPENBSD || LIBFUZZER_KFREEBSD) {
+     // ru_maxrss is in KiB
+     return usage.ru_maxrss >> 10;
+   } else if (LIBFUZZER_APPLE) {
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/fuzzer/FuzzerExtraCounters.cpp
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/compiler-rt/lib/fuzzer/FuzzerExtraCounters.cpp
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/fuzzer/FuzzerExtraCounters.cpp
+@@ -11,7 +11,7 @@
+ #include "FuzzerDefs.h"
+ 
+ #if LIBFUZZER_LINUX || LIBFUZZER_NETBSD || LIBFUZZER_FREEBSD ||                \
+-    LIBFUZZER_OPENBSD
++    LIBFUZZER_OPENBSD || LIBFUZZER_KFREEBSD
+ __attribute__((weak)) extern uint8_t __start___libfuzzer_extra_counters;
+ __attribute__((weak)) extern uint8_t __stop___libfuzzer_extra_counters;
+ 
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/fuzzer/FuzzerExtFunctionsWeak.cpp
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/compiler-rt/lib/fuzzer/FuzzerExtFunctionsWeak.cpp
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/fuzzer/FuzzerExtFunctionsWeak.cpp
+@@ -13,7 +13,7 @@
+ //===----------------------------------------------------------------------===//
+ #include "FuzzerDefs.h"
+ #if LIBFUZZER_LINUX || LIBFUZZER_NETBSD || LIBFUZZER_FUCHSIA ||                \
+-    LIBFUZZER_FREEBSD || LIBFUZZER_OPENBSD
++    LIBFUZZER_FREEBSD || LIBFUZZER_OPENBSD || LIBFUZZER_KFREEBSD
+ 
+ #include "FuzzerExtFunctions.h"
+ #include "FuzzerIO.h"
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/fuzzer/FuzzerUtilLinux.cpp
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/compiler-rt/lib/fuzzer/FuzzerUtilLinux.cpp
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/fuzzer/FuzzerUtilLinux.cpp
+@@ -9,7 +9,7 @@
+ //===----------------------------------------------------------------------===//
+ #include "FuzzerDefs.h"
+ #if LIBFUZZER_LINUX || LIBFUZZER_NETBSD || LIBFUZZER_FREEBSD ||                \
+-    LIBFUZZER_OPENBSD
++    LIBFUZZER_OPENBSD || LIBFUZZER_KFREEBSD
+ #include "FuzzerCommand.h"
+ 
+ #include <stdlib.h>
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/sanitizer_common/sanitizer_freebsd.h
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/compiler-rt/lib/sanitizer_common/sanitizer_freebsd.h
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/sanitizer_common/sanitizer_freebsd.h
+@@ -20,7 +20,7 @@
+ // 32-bit mode.
+ #if SANITIZER_FREEBSD && (SANITIZER_WORDSIZE == 32)
+ # include <osreldate.h>
+-# if __FreeBSD_version <= 902001  // v9.2
++# if !SANITIZER_KFREEBSD && __FreeBSD_version <= 902001 // v9.2
+ #  include <link.h>
+ #  include <sys/param.h>
+ #  include <ucontext.h>
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/sanitizer_common/sanitizer_procmaps_bsd.cpp
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/compiler-rt/lib/sanitizer_common/sanitizer_procmaps_bsd.cpp
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/sanitizer_common/sanitizer_procmaps_bsd.cpp
+@@ -37,7 +37,7 @@
+ // Fix 'kinfo_vmentry' definition on FreeBSD prior v9.2 in 32-bit mode.
+ #if SANITIZER_FREEBSD && (SANITIZER_WORDSIZE == 32)
+ #include <osreldate.h>
+-#if __FreeBSD_version <= 902001 // v9.2
++#if !SANITIZER_KFREEBSD && __FreeBSD_version <= 902001 // v9.2
+ #define kinfo_vmentry xkinfo_vmentry
+ #endif
+ #endif
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_posix.h
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_posix.h
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_posix.h
+@@ -24,7 +24,9 @@
+ #include "sanitizer_glibc_version.h"
+ #endif
+ 
++#if !SANITIZER_KFREEBSD
+ # define GET_LINK_MAP_BY_DLOPEN_HANDLE(handle) ((link_map*)(handle))
++#endif
+ 
+ namespace __sanitizer {
+ extern unsigned struct_utsname_sz;
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/sanitizer_common/sanitizer_syscall_generic.inc
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/compiler-rt/lib/sanitizer_common/sanitizer_syscall_generic.inc
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/sanitizer_common/sanitizer_syscall_generic.inc
+@@ -19,7 +19,7 @@
+ # define SYSCALL(name) __NR_ ## name
+ #endif
+ 
+-#if defined(__x86_64__) && (SANITIZER_FREEBSD || SANITIZER_MAC)
++#if defined(__x86_64__) && ((SANITIZER_FREEBSD  && !SANITIZER_KFREEBSD) || SANITIZER_MAC)
+ # define internal_syscall __syscall
+ # else
+ # define internal_syscall syscall
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_posix.cpp
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_posix.cpp
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_posix.cpp
+@@ -109,10 +109,14 @@ typedef struct user_fpregs elf_fpregset_
+ #include <wordexp.h>
+ #endif
+ 
+-#if SANITIZER_LINUX && !SANITIZER_ANDROID
++#if (SANITIZER_LINUX && !SANITIZER_ANDROID) || SANITIZER_KFREEBSD
+ #include <glob.h>
+ #include <obstack.h>
++#if SANITIZER_KFREEBSD
++#include <sys/mqueue.h>
++#else
+ #include <mqueue.h>
++#endif
+ #include <net/if_ppp.h>
+ #include <netax25/ax25.h>
+ #include <netipx/ipx.h>
+@@ -150,8 +154,12 @@ typedef struct user_fpregs elf_fpregset_
+ #include <linux/if_ppp.h>
+ #endif
+ 
+-#if SANITIZER_LINUX
++#if SANITIZER_LINUX || SANITIZER_KFREEBSD
++#if SANITIZER_KFREEBSD
++#include <sys/link.h>
++#else
+ #include <link.h>
++#endif
+ #include <sys/vfs.h>
+ #include <sys/epoll.h>
+ #include <linux/capability.h>

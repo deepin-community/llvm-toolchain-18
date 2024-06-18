@@ -1,0 +1,19 @@
+Index: llvm-toolchain-15_15.0.3~++20221019061539+4a2c05b05ed0/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_linux.cpp
+===================================================================
+--- llvm-toolchain-15_15.0.3~++20221019061539+4a2c05b05ed0.orig/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_linux.cpp
++++ llvm-toolchain-15_15.0.3~++20221019061539+4a2c05b05ed0/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_linux.cpp
+@@ -64,9 +64,12 @@ using namespace __sanitizer;
+ COMPILER_CHECK(struct___old_kernel_stat_sz == sizeof(struct __old_kernel_stat));
+ #endif
+ 
+-COMPILER_CHECK(struct_kernel_stat_sz == sizeof(struct stat));
++#  if defined(__LP64__) || \
++      (!defined(_LARGEFILE_SOURCE) && _FILE_OFFSET_BITS != 64)
++ COMPILER_CHECK(struct_kernel_stat_sz == sizeof(struct stat));
++#  endif
+ 
+-#if defined(__i386__)
++#  if defined(__i386__)
+ COMPILER_CHECK(struct_kernel_stat64_sz == sizeof(struct stat64));
+ #endif
+ 

@@ -1,0 +1,12 @@
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/llvm/tools/llvm-shlib/CMakeLists.txt
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/llvm/tools/llvm-shlib/CMakeLists.txt
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/llvm/tools/llvm-shlib/CMakeLists.txt
+@@ -49,6 +49,7 @@ if(LLVM_BUILD_LLVM_DYLIB)
+   list(REMOVE_DUPLICATES LIB_NAMES)
+   if(("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux") OR (MINGW) OR (HAIKU)
+      OR ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
++     OR ("${CMAKE_SYSTEM_NAME}" STREQUAL "kFreeBSD")
+      OR ("${CMAKE_SYSTEM_NAME}" STREQUAL "GNU")
+      OR ("${CMAKE_SYSTEM_NAME}" STREQUAL "OpenBSD")
+      OR ("${CMAKE_SYSTEM_NAME}" STREQUAL "Fuchsia")

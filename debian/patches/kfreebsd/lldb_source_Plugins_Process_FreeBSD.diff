@@ -1,0 +1,28 @@
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/lldb/source/Plugins/Process/FreeBSD/FreeBSDThread.cpp
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/lldb/source/Plugins/Process/FreeBSD/FreeBSDThread.cpp
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/lldb/source/Plugins/Process/FreeBSD/FreeBSDThread.cpp
+@@ -8,7 +8,9 @@
+ 
+ #include <errno.h>
+ #include <pthread.h>
++#ifndef __FreeBSD_kernel__
+ #include <pthread_np.h>
++#endif
+ #include <stdlib.h>
+ #include <sys/sysctl.h>
+ #include <sys/types.h>
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/lldb/source/Plugins/Process/FreeBSD/ProcessFreeBSD.cpp
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/lldb/source/Plugins/Process/FreeBSD/ProcessFreeBSD.cpp
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/lldb/source/Plugins/Process/FreeBSD/ProcessFreeBSD.cpp
+@@ -9,7 +9,9 @@
+ 
+ #include <errno.h>
+ #include <pthread.h>
++#ifndef __FreeBSD_kernel__
+ #include <pthread_np.h>
++#endif
+ #include <stdlib.h>
+ #include <sys/sysctl.h>
+ #include <sys/types.h>
