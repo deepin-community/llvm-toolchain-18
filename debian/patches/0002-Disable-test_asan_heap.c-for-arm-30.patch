@@ -1,0 +1,26 @@
+From 77f09cd056d5183fa048d2b8fdc29302dca25ed7 Mon Sep 17 00:00:00 2001
+From: Sylvestre Ledru <sylvestre@debian.org>
+Date: Mon, 19 Oct 2020 14:43:32 +0200
+Subject: [PATCH 2/3] Disable test_asan_heap.c for arm (#30)
+
+Unsupported on this arch:
+clang: error: unsupported option '-fsanitize=thread' for target 'armv7l-unknown-linux-gnueabihf'
+---
+ tests/test_asan_heap.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/integration-test-suite/tests/test_asan_heap.c b/tests/test_asan_heap.c
+index 828ac4f..f021703 100644
+--- a/integration-test-suite/tests/test_asan_heap.c
++++ b/integration-test-suite/tests/test_asan_heap.c
+@@ -4,6 +4,7 @@
+ // RUN: %clang -o %t -fsanitize=address -O1 -fno-omit-frame-pointer -g %s
+ // RUN: env ASAN_OPTIONS="log_path=stdout:exitcode=0"  %t 2>&1 > %t.out
+ // RUN: grep -q "heap-use-after-free" %t.out
++// XFAIL: arm
+ 
+ #include <stdlib.h>
+ int main() {
+-- 
+2.28.0
+

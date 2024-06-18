@@ -1,0 +1,13 @@
+Index: llvm-toolchain-snapshot_15~++20220407011631+46f0e2ceb487/clang/tools/scan-view/bin/scan-view
+===================================================================
+--- llvm-toolchain-snapshot_15~++20220407011631+46f0e2ceb487.orig/clang/tools/scan-view/bin/scan-view
++++ llvm-toolchain-snapshot_15~++20220407011631+46f0e2ceb487/clang/tools/scan-view/bin/scan-view
+@@ -65,7 +65,7 @@ def start_browser(port, options):
+ 
+ def run(port, options, root):
+     # Prefer to look relative to the installed binary
+-    share = os.path.dirname(__file__) + "/../share/scan-view"
++    share = os.path.dirname(__file__) + "/../share/"
+     if not os.path.isdir(share):
+         # Otherwise look relative to the source
+         share = os.path.dirname(__file__) + "/../../scan-view/share"

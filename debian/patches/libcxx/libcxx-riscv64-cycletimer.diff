@@ -1,0 +1,81 @@
+commit 09e6304440c08fe72b6ac05f922ab9d8b7f1e387
+Author: Roger Ferrer Ibanez <rofirrim@gmail.com>
+Date:   Wed Jul 24 05:33:46 2019 +0000
+
+    [RISCV] Implement benchmark::cycleclock::Now
+    
+    This is a cherrypick of D64237 onto llvm/utils/benchmark and
+    libcxx/utils/google-benchmark.
+    
+    Differential Revision: https://reviews.llvm.org/D65142
+    
+    llvm-svn: 366868
+
+--- a/libcxx/utils/google-benchmark/README.LLVM
++++ b/libcxx/utils/google-benchmark/README.LLVM
+@@ -4,3 +4,9 @@ LLVM notes
+ This directory contains the Google Benchmark source code with some unnecessary
+ files removed. Note that this directory is under a different license than
+ libc++.
++
++Changes:
++* https://github.com/google/benchmark/commit/4abdfbb802d1b514703223f5f852ce4a507d32d2
++  is applied on top of
++  https://github.com/google/benchmark/commit/4528c76b718acc9b57956f63069c699ae21edcab
++  to add RISC-V timer support.
+--- a/libcxx/utils/google-benchmark/src/cycleclock.h
++++ b/libcxx/utils/google-benchmark/src/cycleclock.h
+@@ -164,6 +164,21 @@ inline BENCHMARK_ALWAYS_INLINE int64_t Now() {
+   uint64_t tsc;
+   asm("stck %0" : "=Q"(tsc) : : "cc");
+   return tsc;
++#elif defined(__riscv) // RISC-V
++  // Use RDCYCLE (and RDCYCLEH on riscv32)
++#if __riscv_xlen == 32
++  uint64_t cycles_low, cycles_hi0, cycles_hi1;
++  asm("rdcycleh %0" : "=r"(cycles_hi0));
++  asm("rdcycle %0" : "=r"(cycles_lo));
++  asm("rdcycleh %0" : "=r"(cycles_hi1));
++  // This matches the PowerPC overflow detection, above
++  cycles_lo &= -static_cast<int64_t>(cycles_hi0 == cycles_hi1);
++  return (cycles_hi1 << 32) | cycles_lo;
++#else
++  uint64_t cycles;
++  asm("rdcycle %0" : "=r"(cycles));
++  return cycles;
++#endif
+ #else
+ // The soft failover to a generic implementation is automatic only for ARM.
+ // For other platforms the developer is expected to make an attempt to create
+--- a/utils/benchmark/README.LLVM
++++ b/utils/benchmark/README.LLVM
+@@ -23,3 +23,5 @@ Changes:
+   is applied to disable exceptions in Microsoft STL when exceptions are disabled
+ * Disabled CMake get_git_version as it is meaningless for this in-tree build,
+   and hardcoded a null version
++* https://github.com/google/benchmark/commit/4abdfbb802d1b514703223f5f852ce4a507d32d2
++  is applied on top of v1.4.1 to add RISC-V timer support.
+--- a/utils/benchmark/src/cycleclock.h
++++ b/utils/benchmark/src/cycleclock.h
+@@ -164,6 +164,21 @@ inline BENCHMARK_ALWAYS_INLINE int64_t Now() {
+   uint64_t tsc;
+   asm("stck %0" : "=Q" (tsc) : : "cc");
+   return tsc;
++#elif defined(__riscv) // RISC-V
++  // Use RDCYCLE (and RDCYCLEH on riscv32)
++#if __riscv_xlen == 32
++  uint64_t cycles_low, cycles_hi0, cycles_hi1;
++  asm("rdcycleh %0" : "=r"(cycles_hi0));
++  asm("rdcycle %0" : "=r"(cycles_lo));
++  asm("rdcycleh %0" : "=r"(cycles_hi1));
++  // This matches the PowerPC overflow detection, above
++  cycles_lo &= -static_cast<int64_t>(cycles_hi0 == cycles_hi1);
++  return (cycles_hi1 << 32) | cycles_lo;
++#else
++  uint64_t cycles;
++  asm("rdcycle %0" : "=r"(cycles));
++  return cycles;
++#endif
+ #else
+ // The soft failover to a generic implementation is automatic only for ARM.
+ // For other platforms the developer is expected to make an attempt to create

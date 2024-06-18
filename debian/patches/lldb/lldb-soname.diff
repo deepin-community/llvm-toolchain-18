@@ -1,0 +1,50 @@
+---
+ lldb/source/API/CMakeLists.txt |   14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+Index: llvm-toolchain-snapshot_17~++20230523093327+96a003b9bf79/lldb/source/API/CMakeLists.txt
+===================================================================
+--- llvm-toolchain-snapshot_17~++20230523093327+96a003b9bf79.orig/lldb/source/API/CMakeLists.txt
++++ llvm-toolchain-snapshot_17~++20230523093327+96a003b9bf79/lldb/source/API/CMakeLists.txt
+@@ -20,7 +20,12 @@ if(LLDB_ENABLE_LUA)
+   set(lldb_lua_wrapper ${lua_bindings_dir}/LLDBWrapLua.cpp)
+ endif()
+ 
+-add_lldb_library(liblldb SHARED ${option_framework}
++set(output_name lldb)
++if (CMAKE_SYSTEM_NAME MATCHES "Windows")
++  set(output_name liblldb)
++endif()
++
++add_lldb_library(liblldb SHARED OUTPUT_NAME ${output_name} SONAME
+   SBAddress.cpp
+   SBAttachInfo.cpp
+   SBBlock.cpp
+@@ -164,7 +169,7 @@ endif()
+ 
+ set_target_properties(liblldb
+   PROPERTIES
+-  VERSION ${LLDB_VERSION}
++  VERSION 1
+ )
+ 
+ target_compile_definitions(liblldb PRIVATE LLDB_IN_LIBLLDB)
+@@ -184,12 +189,12 @@ if (NOT CMAKE_SYSTEM_NAME MATCHES "Windo
+   set_target_properties(liblldb_exports PROPERTIES FOLDER "lldb misc")
+ endif()
+ 
+-if (NOT MSVC)
+-  set_target_properties(liblldb
+-    PROPERTIES
+-    OUTPUT_NAME lldb
+-  )
+-endif()
++#if (NOT MSVC)
++#  set_target_properties(liblldb
++#    PROPERTIES
++#    OUTPUT_NAME lldb
++#    )
++#endif()
+ 
+ # The Clang expression parser in LLDB requires the Clang resource directory to function.
+ if (TARGET clang-resource-headers)

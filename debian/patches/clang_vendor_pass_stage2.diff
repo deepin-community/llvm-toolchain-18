@@ -1,0 +1,20 @@
+commit ca467542eecfc621eea7fefb3c7e3849c6b43ac7
+Author: Sylvestre Ledru <sylvestre@debian.org>
+Date:   Fri May 29 09:13:08 2020 +0200
+
+    [CMake] Pass CLANG_VENDOR variables into later stages
+    
+    We are already passing CLANG_VERSION_* & PACKAGE_VENDOR
+
+diff --git a/clang/CMakeLists.txt b/clang/CMakeLists.txt
+index 7dadc5f6e91..5a5e34aacbe 100644
+--- a/clang/CMakeLists.txt
++++ b/clang/CMakeLists.txt
+@@ -711,6 +711,7 @@ if (CLANG_ENABLE_BOOTSTRAP)
+     CLANG_VERSION_MAJOR
+     CLANG_VERSION_MINOR
+     CLANG_VERSION_PATCHLEVEL
++    CLANG_VENDOR
+     LLVM_VERSION_SUFFIX
+     LLVM_BINUTILS_INCDIR
+     CLANG_REPOSITORY_STRING

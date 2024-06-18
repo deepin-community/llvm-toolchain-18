@@ -1,0 +1,77 @@
+Index: llvm/lib/MC/MCParser/ELFAsmParser.cpp
+===================================================================
+--- a/llvm/lib/MC/MCParser/ELFAsmParser.cpp
++++ b/llvm/lib/MC/MCParser/ELFAsmParser.cpp
+@@ -652,10 +652,13 @@
+       !(SectionName == ".eh_frame" && Type == ELF::SHT_PROGBITS))
+     Error(loc, "changed section type for " + SectionName + ", expected: 0x" +
+                    utohexstr(Section->getType()));
+-  if (Section->getFlags() != Flags)
++  // Check that flags are used consistently. However, the GNU assembler permits
++  // to leave out in subsequent uses of the same sections; for compatibility,
++  // do likewise.
++  if ((Flags || Size || !TypeName.empty()) && Section->getFlags() != Flags)
+     Error(loc, "changed section flags for " + SectionName + ", expected: 0x" +
+                    utohexstr(Section->getFlags()));
+-  if (Section->getEntrySize() != Size)
++  if ((Flags || Size || !TypeName.empty()) && Section->getEntrySize() != Size)
+     Error(loc, "changed section entsize for " + SectionName +
+                    ", expected: " + Twine(Section->getEntrySize()));
+ 
+Index: llvm/test/MC/ELF/section-entsize-changed.s
+===================================================================
+--- a/llvm/test/MC/ELF/section-entsize-changed.s
++++ b/llvm/test/MC/ELF/section-entsize-changed.s
+@@ -10,3 +10,26 @@
+ .pushsection .foo,"aM",@progbits,4
+ 
+ .pushsection .foo,"aM",@progbits,1
++
++
++bar:
++.section .bar,"ax",@progbits
++
++.section .bar
++
++# CHECK: {{.*}}.s:[[# @LINE+1]]:1: error: changed section flags for .bar, expected: 0x6
++.section .bar,"awx",@progbits
++
++# CHECK: {{.*}}.s:[[# @LINE+1]]:1: error: changed section flags for .bar, expected: 0x6
++.pushsection .bar,"a",@progbits
++
++.pushsection .bar
++
++foobar:
++.section .foobar,"ax",@progbits; .byte 1
++
++# CHECK: {{.*}}.s:[[# @LINE+1]]:1: error: changed section flags for .foobar, expected: 0x6
++.section .foobar,"",@progbits; .byte 2
++
++# CHECK: {{.*}}.s:[[# @LINE+1]]:1: error: changed section flags for .foobar, expected: 0x6
++.section .foobar,"a",@progbits; .byte 3
+Index: llvm/test/MC/ELF/section-omitted-attributes.s
+===================================================================
+--- /dev/null
++++ llvm/test/MC/ELF/section-omitted-attributes.s
+@@ -0,0 +1,21 @@
++# RUN: llvm-mc -triple=x86_64 %s -o - | FileCheck %s
++
++// CHECK: .section        .foo,"aM",@progbits,1
++// CHECK: .section        .bar,"aM",@progbits,4
++
++foo:
++.section .foo,"aM",@progbits,1
++
++.section .foo
++
++.pushsection .foo
++
++.pushsection .foo
++
++.section .bar,"aM",@progbits,4
++
++.section .bar
++
++.pushsection .bar,"aM",@progbits,4
++
++.pushsection .bar

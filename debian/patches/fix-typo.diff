@@ -1,0 +1,35 @@
+Index: llvm-toolchain-14-14.0.6/llvm/include/llvm/ADT/IntrusiveRefCntPtr.h
+===================================================================
+--- llvm-toolchain-14-14.0.6.orig/llvm/include/llvm/ADT/IntrusiveRefCntPtr.h
++++ llvm-toolchain-14-14.0.6/llvm/include/llvm/ADT/IntrusiveRefCntPtr.h
+@@ -84,7 +84,7 @@ protected:
+ #ifndef NDEBUG
+   ~RefCountedBase() {
+     assert(RefCount == 0 &&
+-           "Destruction occured when there are still references to this.");
++           "Destruction occurred when there are still references to this.");
+   }
+ #else
+   // Default the destructor in release builds, A trivial destructor may enable
+@@ -115,7 +115,7 @@ protected:
+ #ifndef NDEBUG
+   ~ThreadSafeRefCountedBase() {
+     assert(RefCount == 0 &&
+-           "Destruction occured when there are still references to this.");
++           "Destruction occurred when there are still references to this.");
+   }
+ #else
+   // Default the destructor in release builds, A trivial destructor may enable
+Index: llvm-toolchain-14-14.0.6/llvm/include/llvm/Support/CommandLine.h
+===================================================================
+--- llvm-toolchain-14-14.0.6.orig/llvm/include/llvm/Support/CommandLine.h
++++ llvm-toolchain-14-14.0.6/llvm/include/llvm/Support/CommandLine.h
+@@ -1308,7 +1308,7 @@ template <> struct applicator<Formatting
+ template <> struct applicator<MiscFlags> {
+   static void opt(MiscFlags MF, Option &O) {
+     assert((MF != Grouping || O.ArgStr.size() == 1) &&
+-           "cl::Grouping can only apply to single charater Options.");
++           "cl::Grouping can only apply to single character Options.");
+     O.setMiscFlag(MF);
+   }
+ };

@@ -1,0 +1,35 @@
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/llvm/lib/Support/Triple.cpp
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/llvm/lib/Support/Triple.cpp
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/llvm/lib/Support/Triple.cpp
+@@ -183,7 +183,7 @@ StringRef Triple::getOSTypeName(OSType K
+   case FreeBSD: return "freebsd";
+   case Fuchsia: return "fuchsia";
+   case IOS: return "ios";
+-  case KFreeBSD: return "kfreebsd";
++  case kFreeBSD: return "kfreebsd";
+   case Linux: return "linux";
+   case Lv2: return "lv2";
+   case MacOSX: return "macosx";
+@@ -488,7 +488,7 @@ static Triple::OSType parseOS(StringRef
+     .StartsWith("freebsd", Triple::FreeBSD)
+     .StartsWith("fuchsia", Triple::Fuchsia)
+     .StartsWith("ios", Triple::IOS)
+-    .StartsWith("kfreebsd", Triple::KFreeBSD)
++    .StartsWith("kfreebsd", Triple::kFreeBSD)
+     .StartsWith("linux", Triple::Linux)
+     .StartsWith("lv2", Triple::Lv2)
+     .StartsWith("macos", Triple::MacOSX)
+Index: llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/llvm/lib/Support/Unix/Path.inc
+===================================================================
+--- llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3.orig/llvm/lib/Support/Unix/Path.inc
++++ llvm-toolchain-snapshot_10~+20191020075550+5b8546023f3/llvm/lib/Support/Unix/Path.inc
+@@ -62,7 +62,7 @@
+ #define FSTATVFS fstatvfs
+ #define STATVFS_F_FRSIZE(vfs) vfs.f_frsize
+ #else
+-#if defined(__OpenBSD__) || defined(__FreeBSD__)
++#if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
+ #include <sys/mount.h>
+ #include <sys/param.h>
+ #elif defined(__linux__)

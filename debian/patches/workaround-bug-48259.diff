@@ -1,0 +1,15 @@
+Index: llvm-toolchain-snapshot_12~++20201124100523+245052ac3080/llvm/include/llvm/Support/Recycler.h
+===================================================================
+--- llvm-toolchain-snapshot_12~++20201124100523+245052ac3080.orig/llvm/include/llvm/Support/Recycler.h
++++ llvm-toolchain-snapshot_12~++20201124100523+245052ac3080/llvm/include/llvm/Support/Recycler.h
+@@ -83,8 +83,8 @@ public:
+   SubClass *Allocate(AllocatorType &Allocator) {
+     static_assert(alignof(SubClass) <= Align,
+                   "Recycler allocation alignment is less than object align!");
+-    static_assert(sizeof(SubClass) <= Size,
+-                  "Recycler allocation size is less than object size!");
++//    static_assert(sizeof(SubClass) <= Size,
++//                  "Recycler allocation size is less than object size!");
+     return FreeList ? reinterpret_cast<SubClass *>(pop_val())
+                     : static_cast<SubClass *>(Allocator.Allocate(Size, Align));
+   }

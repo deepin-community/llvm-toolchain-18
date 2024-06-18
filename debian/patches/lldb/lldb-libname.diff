@@ -1,0 +1,17 @@
+---
+ lldb/scripts/Python/finishSwigPythonLLDB.py |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Index: llvm-toolchain-snapshot_16~svn3316516/lldb/scripts/Python/finishSwigPythonLLDB.py
+===================================================================
+--- llvm-toolchain-snapshot_16~svn3316516.orig/lldb/scripts/Python/finishSwigPythonLLDB.py
++++ llvm-toolchain-snapshot_16~svn3316516/lldb/scripts/Python/finishSwigPythonLLDB.py
+@@ -443,7 +443,7 @@ def make_symlink_liblldb(
+             if eOSType == utilsOsType.EnumOsType.Darwin:
+                 strLibFileExtn = ".dylib"
+             else:
+-                strLibFileExtn = ".so"
++                strLibFileExtn = "-16.so"
+             strSrc = os.path.join(vstrLldbLibDir, "liblldb" + strLibFileExtn)
+ 
+     bOk, strErrMsg = make_symlink(

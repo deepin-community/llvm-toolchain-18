@@ -1,0 +1,49 @@
+Index: llvm-toolchain-11_11.0.1~++20201112101029+0874e7ef66c/integration-test-suite/tests/basic_lldb.c
+===================================================================
+--- llvm-toolchain-11_11.0.1~++20201112101029+0874e7ef66c.orig/integration-test-suite/tests/basic_lldb.c
++++ llvm-toolchain-11_11.0.1~++20201112101029+0874e7ef66c/integration-test-suite/tests/basic_lldb.c
+@@ -1,6 +1,7 @@
+ // RUN: %clang -g -o %t %s
+ // RUN: %lldb -s %S/basic_lldb.in %t | grep "main at basic_lldb.c:"
+ // REQUIRES: lldb, clang
++// XFAIL: i686, i386
+ 
+ int main() {
+ 	int a=0;
+Index: llvm-toolchain-11_11.0.1~++20201112101029+0874e7ef66c/integration-test-suite/tests/basic_lldb2.cpp
+===================================================================
+--- llvm-toolchain-11_11.0.1~++20201112101029+0874e7ef66c.orig/integration-test-suite/tests/basic_lldb2.cpp
++++ llvm-toolchain-11_11.0.1~++20201112101029+0874e7ef66c/integration-test-suite/tests/basic_lldb2.cpp
+@@ -1,6 +1,7 @@
+ // RUN: %clangxx -g -o %t %s
+ // RUN: %lldb -s %S/basic_lldb2.in %t | grep "stop reason = step over"
+ // REQUIRES: lldb, clangxx
++// XFAIL: i686, i386
+ 
+ #include <vector>
+ int main (void)
+Index: llvm-toolchain-11_11.0.1~++20201112101029+0874e7ef66c/integration-test-suite/tests/test_asan_lc.c
+===================================================================
+--- llvm-toolchain-11_11.0.1~++20201112101029+0874e7ef66c.orig/integration-test-suite/tests/test_asan_lc.c
++++ llvm-toolchain-11_11.0.1~++20201112101029+0874e7ef66c/integration-test-suite/tests/test_asan_lc.c
+@@ -3,6 +3,7 @@
+ // REQUIRES: clang
+ // RUN: %clang -fsanitize=address %s -o %t -lc
+ // RUN: %t
++// XFAIL: i686, i386
+ 
+ #include <stdio.h>
+ int main(int argc, char **argv)
+Index: llvm-toolchain-11_11.0.1~++20201112101029+0874e7ef66c/integration-test-suite/tests/test_tsan.c
+===================================================================
+--- llvm-toolchain-11_11.0.1~++20201112101029+0874e7ef66c.orig/integration-test-suite/tests/test_tsan.c
++++ llvm-toolchain-11_11.0.1~++20201112101029+0874e7ef66c/integration-test-suite/tests/test_tsan.c
+@@ -5,7 +5,7 @@
+ // RUN: %llvm-nm %t | grep __tsan
+ // RUN: env TSAN_OPTIONS="log_path=stdout:exitcode=0"  %t 2>&1 > %t.out
+ // RUN: grep -q "data race" %t.out
+-// XFAIL: arm 
++// XFAIL: arm, i686, i386
+ 
+ #include <pthread.h>
+ #include <stdio.h>
