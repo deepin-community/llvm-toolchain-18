@@ -488,7 +488,7 @@ ifeq (,$(filter-out $(DOC_GENERATION_DISTRO), $(DISTRO)))
   DOC_GENERATION=no
 endif
 
-ifneq (,$(filter $(DEB_HOST_ARCH),powerpc powerpcspe))
+ifneq (,$(filter $(DEB_HOST_ARCH),powerpc powerpcspe mips64el))
   LIBCXX_WASM_ENABLE=no
 endif
 

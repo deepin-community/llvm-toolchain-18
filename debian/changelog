@@ -1,3 +1,9 @@
+llvm-toolchain-18 (1:18.1.7-1deepin1) unstable; urgency=medium
+
+  * mips64el disable LIBCXX_WASM.
+
+ -- lichenggang <lichenggang@deepin.org>  Mon, 09 Dec 2024 16:37:37 +0800
+
 llvm-toolchain-18 (1:18.1.7-1) unstable; urgency=medium
 
   * New upstream release
